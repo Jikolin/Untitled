@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bf768a2m53rhc"]
+
+[node name="MyNode" type="MainScene" unique_id=1477903590]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1000900933]
+transform = Transform3D(1, 0, 0, 0, 0.95490605, 0.2969083, 0, -0.2969083, 0.95490605, 0.0022241473, 0.7071038, 1.4181361)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=295822020]
+transform = Transform3D(1, 0, 0, 0, 0.5803193, 0.81438905, 0, -0.81438905, 0.5803193, 0, 0.9282348, 0.765288)

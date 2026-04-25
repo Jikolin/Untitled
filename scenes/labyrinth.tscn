@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://0cuif1dbecin"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_6cn7f"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_5gesb"]
+size = Vector3(1, 0.1, 1)
+
+[node name="Labyrinth" type="Node3D" unique_id=122867265]
+
+[node name="Room" type="MeshInstance3D" parent="." unique_id=2001113921]
+mesh = SubResource("BoxMesh_6cn7f")
+
+[node name="Bridge" type="MeshInstance3D" parent="." unique_id=685897056]
+mesh = SubResource("BoxMesh_5gesb")
