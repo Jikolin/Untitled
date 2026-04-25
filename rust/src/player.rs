@@ -119,8 +119,11 @@ impl Player {
 
     fn move_is_possible(&self, direction: Vector3) -> bool {
     	let curr_position = self.base().get_position();
-    	let new_position = curr_position + direction;
-    	self.map.bind().is_walkable(Vector2i::new(new_position.x as i32, new_position.z as i32))
+    	let new_position = Vector2i::new(
+    		(curr_position.x - 0.5 + direction.x) as i32,
+			(curr_position.z - 0.5 + direction.z) as i32 );
+
+    	self.map.bind().is_walkable(new_position)
     }
 
 }

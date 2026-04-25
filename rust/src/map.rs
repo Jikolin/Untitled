@@ -61,9 +61,9 @@ struct PossCoords {
 
 
 #[derive(GodotClass)]
-#[class(base=Node3D, no_init)]
+#[class(base=Node, no_init)]
 pub struct MapLayer {
-	base: Base<Node3D>,
+	base: Base<Node>,
 	width: usize,
 	height: usize,
 	s_coords: Coords,
