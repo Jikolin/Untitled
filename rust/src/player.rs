@@ -1,6 +1,8 @@
 use godot::prelude::*;
-use godot::classes::{ CharacterBody3D, ICharacterBody3D };
-use godot::classes::{ Input };
+use godot::classes::{ 
+	CharacterBody3D, ICharacterBody3D, 
+ 	CollisionShape3D, MeshInstance3D, Input
+};
 
 
 use crate::map::MapLayer;
@@ -20,7 +22,8 @@ impl Direction {
 pub struct Player {
 	base: Base<CharacterBody3D>,
 	map: Gd<MapLayer>,
-	model: Gd<Node3D>,
+	// mesh: Gd<MeshInstance3D>,
+	// collision: Gd<CollisionShape3D>.
 
 	is_moving: bool,
 	is_in_the_room: bool,
@@ -38,12 +41,20 @@ pub struct Player {
 #[godot_api]
 impl ICharacterBody3D for Player {
 	fn ready(&mut self) {
-		let model = self.model.clone();
+		// let model = self.model.clone();
+		let mesh = load::<PackedScene>("res://assets/player_mesh.tscn")
+			.instantiate_as::<MeshInstance3D>();
+		let shape = load::<PackedScene>("res://assets/player_shape.tscn")
+			.instantiate_as::<CollisionShape3D>();
+
 		let map = self.map.clone();
 
-		self.base_mut().add_child(&model);
+		// self.base_mut().add_child(&model);
 		self.base_mut().set_position(map.bind().get_start_position());
 		self.target_pos = self.base().get_position();
+
+		self.base_mut().add_child(&mesh);
+		self.base_mut().add_child(&shape);
 	}
 
 
@@ -69,14 +80,14 @@ impl ICharacterBody3D for Player {
 #[godot_api]
 impl Player {
 	pub fn new(map: Gd<MapLayer>) -> Gd<Self> {
-		let model = load::<PackedScene>("res://scenes/player.tscn")
-			.instantiate_as::<Node3D>();
+		// let model = load::<PackedScene>("res://scenes/player.tscn")
+		// 	.instantiate_as::<Node3D>();
 
 		Gd::from_init_fn(|base| {
 			Self {
 				base,
 				map,
-				model,
+				// model,
 
 				is_moving: false,
 				is_in_the_room: false,
@@ -124,6 +135,16 @@ impl Player {
 			(curr_position.z - 0.5 + direction.z) as i32 );
 
     	self.map.bind().is_walkable(new_position)
+    }
+
+
+    #[signal]
+    fn exited_room();
+
+    pub fn exit_room(&mut self) {
+    	self.is_in_the_room = false;
+    	self.base_mut().emit_signal("exited_room", &[]);
+    	println!("Exit room!");
     }
 
 }

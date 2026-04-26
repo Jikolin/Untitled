@@ -3,6 +3,8 @@ use godot::classes::{ GridMap, MeshLibrary, Area3D };
 
 use rand::RngExt;
 
+use crate::door;
+
 
 #[derive(Clone, Debug)]
 enum CellType { 
@@ -92,7 +94,7 @@ impl MapLayer {
 
 
 	#[func]
-    fn print_grid(&self) {
+    pub fn print_grid(&self) {
         for row in &self.grid {
             for cell in row {
                 match cell.c_type {
@@ -126,9 +128,6 @@ impl MapLayer {
 					CellType::Room => grid_map.set_cell_item(Vector3i::new(x as i32, 0, y as i32), 0),
 					CellType::Bridge { direction } => {
 						let orientation = match direction {
-						    // (0, _) => 16,  // Up or Down
-						    // (_, 0) => 10,  // Left or Right
-						    // _ => 0
 						    Direction::UP | Direction::DOWN => 16,
 						    Direction::RIGHT | Direction::LEFT => 10,
 						    _ => 0
