@@ -1,7 +1,9 @@
 use godot::prelude::*;
+use godot::classes::{ Area3D };
 
 use crate::player::Player;
 use crate::map::MapLayer;
+use crate::door::Door;
 
 
 #[derive(GodotClass)]
@@ -27,14 +29,25 @@ impl INode3D for MainScene {
 		}
 	}
 
-
 	fn ready(&mut self) {
-		let mut player = self.player.clone();
-		let mut map = self.map.clone();
+		let player = self.player.clone();
+		let map = self.map.clone();
 
 		self.base_mut().add_child(&player);
 		self.base_mut().add_child(&map.bind().build_grid_map());
 
-		player.set_position(map.bind().get_start_position());
+		// let door = Door::new(player.clone(), map.bind().get_start_position());
+		// self.base_mut().add_child(&door);
+	}
+
+	fn physics_process(&mut self, _delta: f32) {
+
+	}
+}
+
+
+impl MainScene {
+	fn enter_room(&mut self, coords: Vector2i) {
+		
 	}
 }
