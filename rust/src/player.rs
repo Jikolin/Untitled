@@ -6,6 +6,7 @@ use godot::classes::{
 
 
 use crate::map::MapLayer;
+use crate::utils::{assets, load_scene, load_inst_as};
 
 
 struct Direction;
@@ -23,7 +24,7 @@ pub struct Player {
 	base: Base<CharacterBody3D>,
 	map: Gd<MapLayer>,
 	// mesh: Gd<MeshInstance3D>,
-	// collision: Gd<CollisionShape3D>.
+	// collision: Gd<CollisionShape3D>,
 
 	is_moving: bool,
 	is_in_the_room: bool,
@@ -41,15 +42,11 @@ pub struct Player {
 #[godot_api]
 impl ICharacterBody3D for Player {
 	fn ready(&mut self) {
-		// let model = self.model.clone();
-		let mesh = load::<PackedScene>("res://assets/player_mesh.tscn")
-			.instantiate_as::<MeshInstance3D>();
-		let shape = load::<PackedScene>("res://assets/player_shape.tscn")
-			.instantiate_as::<CollisionShape3D>();
+		let mesh = load_inst_as::<MeshInstance3D>(assets::PLAYER_MESH);
+		let shape = load_inst_as::<CollisionShape3D>(assets::PLAYER_SHAPE);
 
 		let map = self.map.clone();
 
-		// self.base_mut().add_child(&model);
 		self.base_mut().set_position(map.bind().get_start_position());
 		self.target_pos = self.base().get_position();
 
@@ -107,14 +104,22 @@ impl Player {
 	fn check_input(&mut self) {
         let input = Input::singleton();
 
-        if input.is_action_just_pressed("ui_up").into() {
-        	self.try_to_move(Direction::UP);
-        } else if input.is_action_just_pressed("ui_right").into() {
-        	self.try_to_move(Direction::RIGHT);
-        } else if input.is_action_just_pressed("ui_down").into() {
-        	self.try_to_move(Direction::DOWN);
-        } else if input.is_action_just_pressed("ui_left").into() {
-        	self.try_to_move(Direction::LEFT);
+        if self.is_in_the_room {
+
+        } else {
+        	if input.is_action_just_pressed("ui_up").into() {
+	        	self.try_to_move(Direction::UP);
+	        } else if input.is_action_just_pressed("ui_right").into() {
+	        	self.try_to_move(Direction::RIGHT);
+	        } else if input.is_action_just_pressed("ui_down").into() {
+	        	self.try_to_move(Direction::DOWN);
+	        } else if input.is_action_just_pressed("ui_left").into() {
+	        	self.try_to_move(Direction::LEFT);
+	        }
+
+	        if input.is_action_just_pressed("interact").into() {
+
+	        }	
         }
     }
 
@@ -136,15 +141,4 @@ impl Player {
 
     	self.map.bind().is_walkable(new_position)
     }
-
-
-    #[signal]
-    fn exited_room();
-
-    pub fn exit_room(&mut self) {
-    	self.is_in_the_room = false;
-    	self.base_mut().emit_signal("exited_room", &[]);
-    	println!("Exit room!");
-    }
-
 }
