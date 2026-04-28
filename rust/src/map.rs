@@ -3,7 +3,7 @@ use godot::classes::{ GridMap, MeshLibrary, Area3D };
 
 use rand::RngExt;
 
-use crate::door;
+use crate::player::Player;
 
 
 #[derive(Clone, Debug)]
@@ -127,6 +127,7 @@ impl MapLayer {
 				match self.get_cell_type(&Coords{y, x}) {
 					CellType::Room => grid_map.set_cell_item(Vector3i::new(x as i32, 0, y as i32), 0),
 					CellType::Bridge { direction } => {
+						// Needed if bridge isn't square like
 						let orientation = match direction {
 						    Direction::UP | Direction::DOWN => 16,
 						    Direction::RIGHT | Direction::LEFT => 10,

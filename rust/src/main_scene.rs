@@ -3,7 +3,7 @@ use godot::classes::{ Area3D };
 
 use crate::player::Player;
 use crate::map::MapLayer;
-use crate::door::Door;
+
 
 
 #[derive(GodotClass)]
@@ -42,12 +42,5 @@ impl INode3D for MainScene {
 
 	fn physics_process(&mut self, _delta: f32) {
 
-	}
-}
-
-
-impl MainScene {
-	fn enter_room(&mut self, coords: Vector2i) {
-		
 	}
 }

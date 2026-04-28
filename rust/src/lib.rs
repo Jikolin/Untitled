@@ -7,7 +7,8 @@ struct MyExtension;
 mod main_scene;
 mod map;
 mod player;
-mod door;
+mod utils;
+
 
 
 #[gdextension]
