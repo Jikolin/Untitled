@@ -8,6 +8,7 @@ mod main_scene;
 mod map;
 mod player;
 mod utils;
+mod door;
 
 
 

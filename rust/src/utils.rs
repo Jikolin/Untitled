@@ -1,7 +1,6 @@
 use godot::prelude::*;
 
 
-
 pub mod assets {
 	pub const PLAYER_MESH:		  &str = "res://assets/player_mesh.tscn";
 	pub const PLAYER_SHAPE: 	  &str = "res://assets/player_shape.tscn";
@@ -54,14 +53,8 @@ impl Dir3 {
     pub const RIGHT: Vector3 = Vector3 { x: 1.0, y: 0.0, z: 0.0  };
     pub const DOWN:  Vector3 = Vector3 { x: 0.0, y: 0.0, z: 1.0  };
     pub const LEFT:  Vector3 = Vector3 { x: -1.0, y: 0.0, z: 0.0 };
+
+    pub fn all() -> [Vector3; 4] {
+        [Self::UP, Self::RIGHT, Self::DOWN, Self::LEFT]
+    } 
 }
-
-
-// TODO: finish fn
-// pub fn pos_to_grid_pos(position: Vector3) -> Option<Vector2i> {
-// 	if position.x < 0 || position.z < 0 {
-// 		return None;
-// 	} else {
-// 		Some(Vector2i::new())
-// 	}
-// }
