@@ -31,16 +31,23 @@ impl INode3D for MainScene {
 
 	fn ready(&mut self) {
 		let player = self.player.clone();
-		let map = self.map.clone();
+		let grid = self.map.bind_mut().build_grid_map();
 
 		self.base_mut().add_child(&player);
-		self.base_mut().add_child(&map.bind().build_grid_map());
+		self.base_mut().add_child(&grid);
 
 		// let door = Door::new(player.clone(), map.bind().get_start_position());
 		// self.base_mut().add_child(&door);
 	}
 
-	fn physics_process(&mut self, _delta: f32) {
+	// fn physics_process(&mut self, _delta: f32) {
 
-	}
+	// }
 }
+
+
+// impl MainScene {
+// 	fn enter_room(&self, coords: Vector2i) {
+
+// 	}
+// }
