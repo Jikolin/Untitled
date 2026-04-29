@@ -3,7 +3,8 @@ use godot::classes::{ GridMap, MeshLibrary };
 
 use rand::RngExt;
 
-use crate::utils::{assets, Dir2i, load_resource};
+use crate::utils::{assets, load_resource, load_scene_as, Dir2i, Dir3};
+use crate::door::Door;
 
 
 #[derive(Clone, Debug)]
@@ -16,8 +17,8 @@ enum CellType {
 
 #[derive(Clone)]
 struct CellData {
-    enter: Vector2i,
-    doors: [Vector2i; 4],
+    enter: Vector3,
+    doors: [Vector3; 4],
 }
 
 #[derive(Clone)]
@@ -115,11 +116,20 @@ impl MapLayer {
     }
 
     #[func]
+    pub fn build_room(&mut self, coords: Vector2i) -> Gd<Node3D> {
+        let mut room = load_scene_as::<Node3D>(assets::ROOM);
+        self.place_doors(coords, &mut room);
+        room
+    }
+
+    #[func]
     pub fn is_walkable(&self, coords: Vector2i) -> bool {
         if !self.coords_is_ok(coords) {
             return false;
         }
-        matches!(self.get_cell_type(coords), Some(CellType::Room) | Some(CellType::Start) | Some(CellType::Bridge { .. }))
+        // matches!(self.get_cell_type(coords), Some(CellType::Room) | Some(CellType::Start) | Some(CellType::Bridge { .. }))
+        matches!(self.get_cell_type(coords), Some(CellType::Bridge { .. }))
+
     }
 
 	// Player-oriented
@@ -129,6 +139,21 @@ impl MapLayer {
             x: self.s_coords.x as f32 + 0.5,
             y: 1.0,
             z: self.s_coords.y as f32 + 0.5,
+        }
+    }
+
+    fn place_doors(&self, coords: Vector2i, room: &mut Gd<Node3D>){
+        for dir in Dir3::all() {
+            let dir2i = Vector2i::new(dir.x as i32, dir.z as i32);
+            if let Some(CellType::Bridge { .. }) = self.get_cell_type(coords + dir2i) {
+                let position = Vector3::new(dir.x * 4.9, 0.3, dir.z * 4.9);
+                let rotation = match dir {
+                    Dir3::UP | Dir3::DOWN => Basis::looking_at(Vector3::new(1.0, 0.0, 0.0)),
+                    _ => Basis::default()
+                };
+                let door = Door::new(position, rotation);
+                room.add_child(&door);
+            }
         }
     }
 }
@@ -199,6 +224,7 @@ impl MapLayer {
         poss_coords
     }
 
+    // REMAKE
     fn generate_labyrinth(&mut self) {
         let mut curr_coords = self.s_coords;
         self.set_cell(curr_coords, CellType::Start);

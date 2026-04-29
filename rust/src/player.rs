@@ -5,6 +5,7 @@ use godot::classes::{
 };
 
 use crate::map::MapLayer;
+use crate::main_scene::MainScene;
 use crate::utils::{assets, load_scene, load_scene_as, Dir3};
 
 
@@ -47,18 +48,44 @@ impl ICharacterBody3D for Player {
 	fn physics_process(&mut self, delta: f32) {
 		self.check_input();
 
-		if self.is_moving{
-            let cur_pos = self.base_mut().get_position();
-            let targ_pos = self.target_pos;
+		if self.is_in_the_room {
+			let input = Input::singleton();
+		    let mut velocity = Vector3::ZERO;
 
-            let new_pos = cur_pos.move_toward(targ_pos, &self.step_speed * delta);
-            self.base_mut().set_position(new_pos);
+		    if input.is_action_pressed("ui_up") {
+		        velocity.z -= 1.0;
+		    }
+		    if input.is_action_pressed("ui_down") {
+		        velocity.z += 1.0;
+		    }
+		    if input.is_action_pressed("ui_left") {
+		        velocity.x -= 1.0;
+		    }
+		    if input.is_action_pressed("ui_right") {
+		        velocity.x += 1.0;
+		    }
 
-            if cur_pos.distance_to(targ_pos) < 0.01 {
-                self.base_mut().set_position(targ_pos);
-                self.is_moving = false;
-            }
-        }
+		    if velocity != Vector3::ZERO {
+		        velocity = velocity.normalized() * self.walk_speed * delta;
+		    }
+
+		    self.base_mut().set_velocity(velocity);
+		    self.base_mut().move_and_slide();
+
+		} else {
+			if self.is_moving{
+	            let cur_pos = self.base_mut().get_position();
+	            let targ_pos = self.target_pos;
+
+	            let new_pos = cur_pos.move_toward(targ_pos, &self.step_speed * delta);
+	            self.base_mut().set_position(new_pos);
+
+	            if cur_pos.distance_to(targ_pos) < 0.01 {
+	                self.base_mut().set_position(targ_pos);
+	                self.is_moving = false;
+	            }
+	        }
+		}
 	}
 }
 
@@ -93,7 +120,8 @@ impl Player {
 
         if self.is_in_the_room {
 
-        } else {
+
+        } else if !self.is_moving {
         	if input.is_action_just_pressed("ui_up").into() {
 	        	self.try_to_move(Dir3::UP);
 	        } else if input.is_action_just_pressed("ui_right").into() {
@@ -105,10 +133,22 @@ impl Player {
 	        }
 
 	        if input.is_action_just_pressed("interact").into() {
-
+	        	let mut main = self.base()
+				    .get_tree()
+				    .get_root().unwrap()
+				    .get_node_as::<MainScene>("MyNode");
+				let coords = self.base().get_position();
+				let coords = Vector2i::new((coords.x - 0.5) as i32, (coords.z - 0.5) as i32);
+	        	main.bind_mut().enter_room(coords);
 	        }	
         }
     }
+
+    #[func]
+    pub fn enter_room(&mut self) {
+		self.is_in_the_room = true;
+		// self.base_mut().set_position(Vector3::new(0.0, 1.0, 0.0));
+	}
 
 
     fn try_to_move(&mut self, direction: Vector3) {
