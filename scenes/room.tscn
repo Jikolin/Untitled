@@ -20,7 +20,7 @@ size = Vector3(10, 2.5, 0.1)
 
 [node name="Room" type="Node3D" unique_id=1528866132]
 
-[node name="Floor" type="Area3D" parent="." unique_id=1828654339]
+[node name="Floor" type="Node3D" parent="." unique_id=751279217]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1745646897]
 mesh = SubResource("BoxMesh_f1tnb")
@@ -28,7 +28,7 @@ mesh = SubResource("BoxMesh_f1tnb")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1114922263]
 shape = SubResource("BoxShape3D_36trf")
 
-[node name="Wall1" type="Area3D" parent="." unique_id=331329496]
+[node name="Wall1" type="Node3D" parent="." unique_id=841923975]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall1" unique_id=398295306]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.25, 0)
