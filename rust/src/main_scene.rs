@@ -3,6 +3,7 @@ use godot::classes::{ GridMap };
 
 use crate::player::Player;
 use crate::map::MapLayer;
+use crate::door::Door;
 
 
 
@@ -33,10 +34,11 @@ impl INode3D for MainScene {
 	}
 
 	fn ready(&mut self) {
-		let player = self.player.clone();
+		let mut player = self.player.clone();
 		let grid = self.map_grid.clone();
 
 		self.base_mut().add_child(&player);
+		player.connect("enter_room", &self.to_gd().callable("enter_room"));
 		self.base_mut().add_child(&grid);
 	}
 }
@@ -47,8 +49,21 @@ impl MainScene {
 	#[func]
 	pub fn enter_room(&mut self, coords: Vector2i) {
 		let room = self.map.bind_mut().build_room(coords);
+		for child in room.get_children().iter_shared() {
+	        if let Ok(mut door) = child.try_cast::<Door>() {
+	            door.connect("exit_room", &self.to_gd().callable("exit_room"));
+	        }
+	    }
 		self.map_grid.set_visible(false);
 		self.base_mut().add_child(&room);
-		self.player.bind_mut().enter_room();
+	}
+
+	#[func]
+	pub fn exit_room(&mut self) {
+		self.player.bind_mut().exit_room();
+		self.map_grid.set_visible(true);
+		if let Some(mut room) = self.base().try_get_node_as::<Node3D>("Room") {
+		    room.queue_free();
+		}
 	}
 }

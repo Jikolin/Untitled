@@ -27,6 +27,8 @@ pub struct Player {
 	target_velocity: Vector3,
 	target_pos: 	 Vector3,
 	target_rot: 	 Basis,	
+	target_rot_grid: Basis,
+	grid_position:   Vector3,
 }
 
 
@@ -49,31 +51,10 @@ impl ICharacterBody3D for Player {
 		self.check_input();
 
 		if self.is_in_the_room {
-			let input = Input::singleton();
-		    let mut velocity = Vector3::ZERO;
-
-		    if input.is_action_pressed("ui_up") {
-		        velocity.z -= 1.0;
-		    }
-		    if input.is_action_pressed("ui_down") {
-		        velocity.z += 1.0;
-		    }
-		    if input.is_action_pressed("ui_left") {
-		        velocity.x -= 1.0;
-		    }
-		    if input.is_action_pressed("ui_right") {
-		        velocity.x += 1.0;
-		    }
-
-		    if velocity != Vector3::ZERO {
-		        velocity = velocity.normalized() * self.walk_speed * delta;
-		    }
-
-		    self.base_mut().set_velocity(velocity);
-		    self.base_mut().move_and_slide();
-
-		} else {
-			if self.is_moving{
+			let velocity = self.target_velocity * self.walk_speed;
+			self.base_mut().set_velocity(velocity);
+			self.base_mut().move_and_slide();
+		} else if self.is_moving {
 	            let cur_pos = self.base_mut().get_position();
 	            let targ_pos = self.target_pos;
 
@@ -84,7 +65,6 @@ impl ICharacterBody3D for Player {
 	                self.base_mut().set_position(targ_pos);
 	                self.is_moving = false;
 	            }
-	        }
 		}
 	}
 }
@@ -105,21 +85,50 @@ impl Player {
 
 				step_speed: 5.0,
 				step_size: 	2.0,
-				walk_speed: 3.5,
+				walk_speed: 5.5,
 
 				target_velocity: Vector3::ZERO,
 				target_pos: 	 Vector3::ZERO,
 				target_rot: 	 Basis::default(),
+				target_rot_grid: Basis::default(),
+				grid_position:   Vector3::ZERO,
 			}
 		})
 	}
+
+	#[signal]
+	fn enter_room(coords: Vector2i);
 
 
 	fn check_input(&mut self) {
         let input = Input::singleton();
 
         if self.is_in_the_room {
+        	if input.is_action_pressed("ui_up").into() {
+	        	self.target_velocity.z -= 1.0;
+	        } else if input.is_action_pressed("ui_down").into() {
+	        	self.target_velocity.z += 1.0;
+	        } else {
+	        	self.target_velocity.z = 0.0;
+	        }
 
+	        if input.is_action_pressed("ui_right").into() {
+	        	self.target_velocity.x += 1.0;
+	        } else if input.is_action_pressed("ui_left").into() {
+	        	self.target_velocity.x -= 1.0;
+	        } else {
+	        	self.target_velocity.x = 0.0;
+	        }
+
+			if self.target_velocity != Vector3::ZERO{
+				if self.target_velocity.x > 0.0 && self.target_velocity.z > 0.0 {
+					// Moderate formula
+					self.target_velocity.x = self.target_velocity.x / 2.0;
+					self.target_velocity.z = self.target_velocity.z / 2.0;
+				}
+				self.target_velocity = self.target_velocity.normalized();
+				self.target_rot = Basis::looking_at(self.target_velocity);
+			}
 
         } else if !self.is_moving {
         	if input.is_action_just_pressed("ui_up").into() {
@@ -133,13 +142,10 @@ impl Player {
 	        }
 
 	        if input.is_action_just_pressed("interact").into() {
-	        	let mut main = self.base()
-				    .get_tree()
-				    .get_root().unwrap()
-				    .get_node_as::<MainScene>("MyNode");
-				let coords = self.base().get_position();
-				let coords = Vector2i::new((coords.x - 0.5) as i32, (coords.z - 0.5) as i32);
-	        	main.bind_mut().enter_room(coords);
+	        	let pos = self.base().get_position();
+	        	let coords = Vector2i::new((pos.x - 0.5) as i32, (pos.z - 0.5) as i32);
+	        	self.enter_room();
+	        	self.base_mut().emit_signal("enter_room", &[coords.to_variant()]);
 	        }	
         }
     }
@@ -147,12 +153,23 @@ impl Player {
     #[func]
     pub fn enter_room(&mut self) {
 		self.is_in_the_room = true;
-		// self.base_mut().set_position(Vector3::new(0.0, 1.0, 0.0));
+		let position = self.base().get_position();
+		let position = Vector3::new(position.x, 1.0, position.z);
+		self.grid_position = position;
+		self.target_pos = position;
+		self.base_mut().set_position(Vector3::new(0.0, 1.0, 0.0));
+	}
+
+	#[func]
+	pub fn exit_room(&mut self) {
+		self.is_in_the_room = false;
+		let grid_position = self.grid_position;
+		self.base_mut().set_position(grid_position);
 	}
 
 
     fn try_to_move(&mut self, direction: Vector3) {
-    	if self.move_is_possible(direction) && !self.is_moving {
+    	if !self.is_in_the_room && self.move_is_possible(direction) && !self.is_moving {
     		self.is_moving = true;
     		self.target_pos += direction * self.step_size;
             // self.target_rot = Basis::looking_at(dir, Vector3::UP, true);
