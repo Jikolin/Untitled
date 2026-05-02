@@ -44,12 +44,25 @@ impl INode3D for MainScene {
 
 	fn physics_process(&mut self, delta: f32) {
 		// Smooth camera movement
+		// let mut camera = self.base().try_get_node_as::<Camera3D>("Camera3D").unwrap();
+		// let player_pos = self.player.get_position();
+		// let cam_pos = camera.get_position();
+		// let target = Vector3::new(player_pos.x, 2.5, player_pos.z + 3.0);
+		// let mut new_pos = cam_pos.lerp(target, 3.5 * delta);
+		// if self.player.bind().is_in_the_room {
+		// 	new_pos = Vector3::new(new_pos.x, 5.0, new_pos.z);
+		// }
+		// camera.set_position(new_pos);
 		let mut camera = self.base().try_get_node_as::<Camera3D>("Camera3D").unwrap();
 		let player_pos = self.player.get_position();
 		let cam_pos = camera.get_position();
 		let target = Vector3::new(player_pos.x, 2.5, player_pos.z + 3.0);
 		let new_pos = cam_pos.lerp(target, 3.5 * delta);
 		camera.set_position(new_pos);
+
+		let target_basis = Basis::looking_at(player_pos - new_pos);
+		let new_basis = camera.get_basis().slerp(&target_basis, 5.0 * delta);
+		camera.set_basis(new_basis);
 	}
 }
 

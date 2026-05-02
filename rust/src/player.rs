@@ -17,7 +17,7 @@ pub struct Player {
 	map: Gd<MapLayer>,
 
 	is_moving: 		bool,
-	is_in_the_room: bool,
+	pub is_in_the_room: bool,
 
 	step_speed: f32,
 	step_size:  f32,
