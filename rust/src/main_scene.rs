@@ -1,5 +1,5 @@
 use godot::prelude::*;
-use godot::classes::{ GridMap };
+use godot::classes::{ GridMap, Camera3D };
 
 use crate::player::Player;
 use crate::map::MapLayer;
@@ -40,6 +40,16 @@ impl INode3D for MainScene {
 		self.base_mut().add_child(&player);
 		player.connect("enter_room", &self.to_gd().callable("enter_room"));
 		self.base_mut().add_child(&grid);
+	}
+
+	fn physics_process(&mut self, delta: f32) {
+		// Smooth camera movement
+		let mut camera = self.base().try_get_node_as::<Camera3D>("Camera3D").unwrap();
+		let player_pos = self.player.get_position();
+		let cam_pos = camera.get_position();
+		let target = Vector3::new(player_pos.x, 2.5, player_pos.z + 3.0);
+		let new_pos = cam_pos.lerp(target, 3.5 * delta);
+		camera.set_position(new_pos);
 	}
 }
 
