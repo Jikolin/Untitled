@@ -5,8 +5,7 @@ use godot::classes::{
 };
 
 use crate::map::MapLayer;
-use crate::main_scene::MainScene;
-use crate::utils::{assets, load_scene, load_scene_as, Dir3};
+use crate::utils::{assets, load_scene_as, Dir3};
 
 
 #[derive(GodotClass)]
@@ -26,8 +25,9 @@ pub struct Player {
 
 	target_velocity: Vector3,
 	target_pos: 	 Vector3,
-	target_rot: 	 Basis,	
-	target_rot_grid: Basis,
+	buff_target_pos: Vector3,
+	// target_rot: 	 Basis,	
+	// target_rot_grid: Basis,
 	grid_position:   Vector3,
 }
 
@@ -63,9 +63,14 @@ impl ICharacterBody3D for Player {
 
 	            if cur_pos.distance_to(targ_pos) < 0.01 {
 	                self.base_mut().set_position(targ_pos);
-	                self.is_moving = false;
+	                if self.buff_target_pos != Vector3::ZERO {
+	                	self.target_pos = self.buff_target_pos;
+	                	self.buff_target_pos = Vector3::ZERO;
+	                } else {
+	                	self.is_moving = false;
+	                }
 	            }
-		}
+		} 
 	}
 }
 
@@ -89,8 +94,9 @@ impl Player {
 
 				target_velocity: Vector3::ZERO,
 				target_pos: 	 Vector3::ZERO,
-				target_rot: 	 Basis::default(),
-				target_rot_grid: Basis::default(),
+				buff_target_pos: Vector3::ZERO,
+				// target_rot: 	 Basis::default(),
+				// target_rot_grid: Basis::default(),
 				grid_position:   Vector3::ZERO,
 			}
 		})
@@ -127,10 +133,10 @@ impl Player {
 					self.target_velocity.z = self.target_velocity.z / 2.0;
 				}
 				self.target_velocity = self.target_velocity.normalized();
-				self.target_rot = Basis::looking_at(self.target_velocity);
+				// self.target_rot = Basis::looking_at(self.target_velocity);
 			}
 
-        } else if !self.is_moving {
+        } else {
         	if input.is_action_just_pressed("ui_up").into() {
 	        	self.try_to_move(Dir3::UP);
 	        } else if input.is_action_just_pressed("ui_right").into() {
@@ -169,19 +175,20 @@ impl Player {
 
 
     fn try_to_move(&mut self, direction: Vector3) {
-    	if !self.is_in_the_room && self.move_is_possible(direction) && !self.is_moving {
+    	let curr_position = self.base().get_position();
+    	if !self.is_moving && self.move_is_possible(curr_position, direction) {
     		self.is_moving = true;
     		self.target_pos += direction * self.step_size;
-            // self.target_rot = Basis::looking_at(dir, Vector3::UP, true);
+    	} else if self.move_is_possible(self.target_pos, direction) {
+    		self.buff_target_pos = self.target_pos + direction * self.step_size;
     	}
     }
 
 
-    fn move_is_possible(&self, direction: Vector3) -> bool {
-    	let curr_position = self.base().get_position();
+    fn move_is_possible(&self, position: Vector3, direction: Vector3) -> bool {
     	let new_position = Vector2i::new(
-    		(curr_position.x - 0.5 + direction.x) as i32,
-			(curr_position.z - 0.5 + direction.z) as i32 );
+    		(position.x - 0.5 + direction.x) as i32,
+			(position.z - 0.5 + direction.z) as i32 );
 
     	self.map.bind().is_walkable(new_position)
     }
