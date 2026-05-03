@@ -52,7 +52,7 @@ impl INode3D for MainScene {
 	        let new_basis = camera.get_basis().slerp(&target_basis, 5.0 * delta);
 	        camera.set_basis(new_basis);
 	    } else {
-	        let target = Vector3::new(player_pos.x, 2.5, player_pos.z + 3.0);
+	        let target = Vector3::new(player_pos.x + 1.2, 2.5, player_pos.z + 3.0);
 	        let new_pos = cam_pos.lerp(target, 3.5 * delta);
 	        camera.set_position(new_pos);
 	        let target_basis = Basis::looking_at(player_pos - new_pos);

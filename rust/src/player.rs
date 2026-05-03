@@ -151,11 +151,10 @@ impl Player {
     }
 
 	fn enter_room(&mut self) {
-		let coords = self.get_grid_position();
+		let coords = self.get_grid_position(Vector3::ZERO);
 		self.base_mut().emit_signal("enter_room", &[coords.to_variant()]);
 		self.is_in_the_room = true;
 		self.grid_position = self.base().get_position();
-		let move_direction = self.move_direction;
 		let position = self.base().get_position() + self.move_direction * -4.0;
 		self.base_mut().set_position(position);
 	}
@@ -181,16 +180,16 @@ impl Player {
 
 
     fn move_is_possible(&self, position: Vector3, direction: Vector3) -> bool {
-    	let new_position = Vector2i::new(
-    		(position.x - 0.5 + direction.x) as i32,
-			(position.z - 0.5 + direction.z) as i32 );
-
-    	self.map.bind().is_walkable(new_position)
+    	self.map.bind().is_walkable(self.get_grid_position(position + direction))
     }
 
-    // Returning player's position without any other edits
-    fn get_grid_position(&self) -> Vector2i {
-    	let curr_position = self.base().get_position();
-    	Vector2i::new((curr_position.x - 0.5) as i32, (curr_position.z - 0.5) as i32)
+    // Scaling position to the map's grid postitioning
+    fn get_grid_position(&self, position: Vector3) -> Vector2i {
+    	if position == Vector3::ZERO {
+    		let position = self.base().get_position();
+    		return Vector2i::new((position.x - 0.5) as i32, (position.z - 0.5) as i32)
+    	} else {
+    		Vector2i::new((position.x - 0.5) as i32, (position.z - 0.5) as i32)
+    	}
     }
 }
