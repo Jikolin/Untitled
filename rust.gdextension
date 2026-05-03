@@ -12,6 +12,7 @@ linux.release.x86_64 = 	 "res://rust/target/release/librust.so"
 windows.debug.x86_64 =   "res://rust/target/debug/rust.dll"
 windows.release.x86_64 = "res://rust/target/release/rust.dll"
 
+#Might not work
 macos.debug =            "res://rust/target/debug/librust.dylib"
 macos.release =          "res://rust/target/release/librust.dylib"
 macos.debug.arm64 =      "res://rust/target/debug/librust.dylib"

@@ -135,12 +135,14 @@ impl MapLayer {
 	// Player-oriented
     #[func]
     pub fn get_start_position(&self) -> Vector3 {
-        Vector3 {
-            x: self.s_coords.x as f32 + 0.5,
-            y: 1.0,
-            z: self.s_coords.y as f32 + 0.5,
-        }
+        Vector3::new(self.s_coords.x as f32 + 0.5, 1.2, self.s_coords.y as f32 + 0.5)
     }
+
+    // For entering start room. Not sure
+    // #[func]
+    // pub fn get_start_coords(&self) -> Vector3 {
+    //     Vector3::new(self.s_coords.x as f32, 1.0, self.s_coords.y as f32)
+    // }
 
     fn place_doors(&self, coords: Vector2i, room: &mut Gd<Node3D>){
         for dir in Dir3::all() {
