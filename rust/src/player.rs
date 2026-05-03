@@ -16,7 +16,7 @@ pub struct Player {
 	shape: Gd<CollisionShape3D>,
 	map: Gd<MapLayer>,
 
-	is_moving: 		bool,
+	pub is_moving: 		bool,
 	pub is_in_the_room: bool,
 
 	step_speed: f32,
@@ -25,9 +25,8 @@ pub struct Player {
 
 	target_velocity: Vector3,
 	target_pos: 	 Vector3,
-	buff_target_pos: Vector3,
-	// target_rot: 	 Basis,	
-	// target_rot_grid: Basis,
+	buff_target_pos: Vector3, // buffer target position | for better movement
+	move_direction:  Vector3,
 	grid_position:   Vector3,
 }
 
@@ -95,8 +94,7 @@ impl Player {
 				target_velocity: Vector3::ZERO,
 				target_pos: 	 Vector3::ZERO,
 				buff_target_pos: Vector3::ZERO,
-				// target_rot: 	 Basis::default(),
-				// target_rot_grid: Basis::default(),
+				move_direction:  Vector3::ZERO,
 				grid_position:   Vector3::ZERO,
 			}
 		})
@@ -128,12 +126,11 @@ impl Player {
 
 			if self.target_velocity != Vector3::ZERO{
 				if self.target_velocity.x > 0.0 && self.target_velocity.z > 0.0 {
-					// Moderate formula
+					// TODO: Moderate formula
 					self.target_velocity.x = self.target_velocity.x / 2.0;
 					self.target_velocity.z = self.target_velocity.z / 2.0;
 				}
 				self.target_velocity = self.target_velocity.normalized();
-				// self.target_rot = Basis::looking_at(self.target_velocity);
 			}
 
         } else {
@@ -147,23 +144,20 @@ impl Player {
 	        	self.try_to_move(Dir3::LEFT);
 	        }
 
-	        if input.is_action_just_pressed("interact").into() {
-	        	let pos = self.base().get_position();
-	        	let coords = Vector2i::new((pos.x - 0.5) as i32, (pos.z - 0.5) as i32);
+	        if input.is_action_just_pressed("interact").into() && !self.is_moving {
 	        	self.enter_room();
-	        	self.base_mut().emit_signal("enter_room", &[coords.to_variant()]);
 	        }	
         }
     }
 
-    #[func]
-    pub fn enter_room(&mut self) {
+	fn enter_room(&mut self) {
+		let coords = self.get_grid_position();
+		self.base_mut().emit_signal("enter_room", &[coords.to_variant()]);
 		self.is_in_the_room = true;
-		let position = self.base().get_position();
-		let position = Vector3::new(position.x, 1.0, position.z);
-		self.grid_position = position;
-		self.target_pos = position;
-		self.base_mut().set_position(Vector3::new(0.0, 1.0, 0.0));
+		self.grid_position = self.base().get_position();
+		let move_direction = self.move_direction;
+		let position = self.base().get_position() + self.move_direction * -4.0;
+		self.base_mut().set_position(position);
 	}
 
 	#[func]
@@ -178,6 +172,7 @@ impl Player {
     	let curr_position = self.base().get_position();
     	if !self.is_moving && self.move_is_possible(curr_position, direction) {
     		self.is_moving = true;
+    		self.move_direction = direction;
     		self.target_pos += direction * self.step_size;
     	} else if self.move_is_possible(self.target_pos, direction) {
     		self.buff_target_pos = self.target_pos + direction * self.step_size;
@@ -191,5 +186,11 @@ impl Player {
 			(position.z - 0.5 + direction.z) as i32 );
 
     	self.map.bind().is_walkable(new_position)
+    }
+
+    // Returning player's position without any other edits
+    fn get_grid_position(&self) -> Vector2i {
+    	let curr_position = self.base().get_position();
+    	Vector2i::new((curr_position.x - 0.5) as i32, (curr_position.z - 0.5) as i32)
     }
 }

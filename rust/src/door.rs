@@ -53,12 +53,16 @@ impl Door {
 	fn exit_room();
 
 	#[func]
-	fn on_body_entered(&mut self, _body: Gd<Player>) {
-		self.is_colliding_player = true;
+	fn on_body_entered(&mut self, body: Gd<Node3D>) {
+	    if body.try_cast::<Player>().is_ok() {
+	        self.is_colliding_player = true;
+	    }
 	}
 
 	#[func]
-	fn on_body_exited(&mut self, _body: Gd<Player>) {
-		self.is_colliding_player = false;
+	fn on_body_exited(&mut self, body: Gd<Node3D>) {
+	    if body.try_cast::<Player>().is_ok() {
+	        self.is_colliding_player = false;
+	    }
 	}
 }
