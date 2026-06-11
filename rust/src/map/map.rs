@@ -70,6 +70,14 @@ impl Map {
             let door = DoorNode::new(door_data);
             room.add_child(&door);
         }
+
+        self.curr_room = Some(room_data);
         room
+    }
+
+    pub fn leave_room(&mut self) {
+        let mut room_data = self.curr_room.clone().unwrap();
+        self.mut_current_floor().prepare_leave_room(&mut room_data);
+        self.curr_room = None;
     }
 }
