@@ -2,11 +2,9 @@ use godot::classes::{GridMap, MeshLibrary};
 use godot::prelude::*;
 use rand::RngExt;
 
-use crate::enemy::Goblin;
 use crate::utils::{Dir2i, Dir3, assets, load_resource};
 
-use crate::enemy::EnemyData;
-use crate::enemy::{EnemyClass, enemy};
+use crate::enemy::{Enemy, EnemyClass, EnemyData};
 use crate::map::door::DoorData;
 use crate::player::Player;
 
@@ -34,10 +32,11 @@ pub struct Cell {
     pub data: CellData,
 }
 
+#[derive(Clone)]
 pub struct RoomData {
     pub coords: Vector2i,
     pub is_cleared: bool,
-    pub enemies: Vec<Gd<Node3D>>,
+    pub enemies: Vec<Gd<Enemy>>,
     // pub scene: Gd<Node3D>,
 }
 
@@ -126,27 +125,27 @@ impl Floor {
             Some(cell) if !cell.is_visited => cell,
             _ => return,
         };
-        cell.is_visited = true;
-        cell.data = CellData {
-            doors,
-            enemies: vec![EnemyData {
-                class: EnemyClass::Goblin,
-                position: Vector3::default(),
-                player,
-                is_alive: true,
-            }],
-        };
+        if cell.is_visited {
+            return;
+        } else {
+            cell.is_visited = true;
+            cell.data = CellData {
+                doors,
+                enemies: vec![EnemyData {
+                    class: EnemyClass::Goblin,
+                    position: Vector3::default(),
+                    player,
+                    is_alive: true,
+                }],
+            };
+        }
     }
 
-    pub fn prepare_leave_room(&mut self, room_data: RoomData) {
-        if !room_data.is_cleared {
-            let mut data = self.get_cell_mut_data(room_data.coords).unwrap();
-            data.enemies.clear();
-            for enemy in room_data.enemies.iter() {
-                data.enemies.push(enemy.bind_mut().to_data());
-            }
-        } else {
-            return;
+    pub fn prepare_leave_room(&mut self, room_data: &mut RoomData) {
+        let mut cell_data = self.get_cell_mut_data(room_data.coords).unwrap();
+        cell_data.enemies.clear();
+        for enemy in room_data.enemies.iter() {
+            cell_data.enemies.push(enemy.bind().to_data());
         }
     }
 

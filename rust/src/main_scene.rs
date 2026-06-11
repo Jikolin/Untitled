@@ -1,7 +1,6 @@
 use godot::classes::{Camera3D, GridMap};
 use godot::prelude::*;
 
-use crate::enemy::Goblin;
 use crate::map::DoorNode;
 use crate::map::Map;
 use crate::player::Player;
@@ -89,6 +88,7 @@ impl MainScene {
     pub fn exit_room(&mut self) {
         self.player.bind_mut().exit_room();
         self.map_grid.set_visible(true);
+        self.map.bind_mut().leave_room();
         if let Some(mut room) = self.base().try_get_node_as::<Node3D>("Room") {
             room.queue_free();
         }

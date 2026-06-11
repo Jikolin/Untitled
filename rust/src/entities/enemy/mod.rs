@@ -1,5 +1,4 @@
 pub mod enemy;
-pub use enemy::{EnemyClass, EnemyData};
+pub use enemy::{Enemy, EnemyClass, EnemyData};
 
-pub mod goblin;
-pub use goblin::Goblin;
+// pub mod goblin;
