@@ -2,7 +2,6 @@ use godot::classes::{CharacterBody3D, CollisionShape3D, ICharacterBody3D, MeshIn
 use godot::prelude::*;
 
 use crate::Player;
-// use crate::enemy::Goblin;
 use crate::utils::{assets, load_scene_as};
 
 #[derive(Clone, Copy)]
@@ -38,6 +37,7 @@ pub struct Enemy {
     mesh: Gd<MeshInstance3D>,
     shape: Gd<CollisionShape3D>,
     pub class: EnemyClass,
+    // pub name: String,
     player: Gd<Player>,
 
     pub is_alive: bool,

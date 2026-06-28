@@ -1,46 +1,67 @@
-use godot::classes::{Camera3D, GridMap};
+use godot::classes::{Camera3D, GridMap, Input};
 use godot::prelude::*;
 
-use crate::map::DoorNode;
+use crate::Player;
 use crate::map::Map;
-use crate::player::Player;
 
+// Game's enter point
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 pub struct MainScene {
     base: Base<Node3D>,
-
     player: Gd<Player>,
     map: Gd<Map>,
-    map_grid: Gd<GridMap>,
+    grid_map: Gd<GridMap>,
+    camera: Gd<Camera3D>,
 }
 
 #[godot_api]
 impl INode3D for MainScene {
-    fn init(base: Base<Node3D>) -> Self {
-        let mut map = Map::new((10, 10), 2);
-        let map_grid = map.bind_mut().build_grid_map();
+    fn init(base: Base<Node3D>) -> MainScene {
+        let mut map = Map::new((10, 10), 3);
+        let grid_map = map.bind_mut().build_grid_map();
         let player = Player::new(map.clone());
+        let camera = Camera3D::new_alloc();
 
-        Self {
+        MainScene {
             base,
             player,
             map,
-            map_grid,
+            grid_map,
+            camera,
         }
     }
 
     fn ready(&mut self) {
-        let mut player = self.player.clone();
-        let grid = self.map_grid.clone();
-
+        let player = self.player.clone();
+        let grid_map = self.grid_map.clone();
+        let camera = self.camera.clone();
         self.base_mut().add_child(&player);
-        player.connect("enter_room", &self.to_gd().callable("enter_room"));
-        self.base_mut().add_child(&grid);
+        self.base_mut().add_child(&grid_map);
+        self.base_mut().add_child(&camera);
     }
 
     fn physics_process(&mut self, delta: f32) {
-        let mut camera = self.base().try_get_node_as::<Camera3D>("Camera3D").unwrap();
+        self.check_input();
+        self.move_camera(delta);
+    }
+}
+
+impl MainScene {
+    fn check_input(&mut self) {
+        let input = Input::singleton();
+        if input.is_action_just_pressed("interact") {
+            if !self.player.bind().is_in_the_room && !self.player.bind().is_moving {
+                self.enter_room();
+                self.player.bind_mut().enter_room();
+            } else if self.player.bind().is_in_the_room && self.map.bind().try_exit_room() {
+                self.exit_room();
+            }
+        }
+    }
+
+    fn move_camera(&mut self, delta: f32) {
+        let mut camera = self.camera.clone();
         let player_pos = self.player.get_position();
         let cam_pos = camera.get_position();
 
@@ -57,40 +78,25 @@ impl INode3D for MainScene {
             camera.set_basis(new_basis);
         }
     }
-}
 
-#[godot_api]
-impl MainScene {
-    #[func]
-    pub fn enter_room(&mut self, coords: Vector2i) {
+    fn enter_room(&mut self) {
+        let coords = self.player.bind().get_grid_position(Vector3::ZERO);
         let mut room = self.map.bind_mut().build_room(coords, self.player.clone());
-        for child in room.get_children().iter_shared() {
-            if let Ok(mut door) = child.try_cast::<DoorNode>() {
-                door.connect("exit_room", &self.to_gd().callable("exit_room"));
-            }
-        }
-        self.map_grid.set_visible(false);
-        self.base_mut().add_child(&room);
+        self.grid_map.set_visible(false);
+
         let player_pos = self.player.get_position();
         let room_pos = Vector3::new(player_pos.x, 0.5, player_pos.z);
         room.set_position(room_pos);
 
-        // let mut goblin = Goblin::new(self.player.clone());
-        // self.base_mut().add_child(&goblin);
-        // goblin.set_position(Vector3::new(player_pos.x - 1.5, 1.0, player_pos.z - 1.5));
-
         let camera_pos = Vector3::new(room_pos.x, 5.0, room_pos.z + 6.0);
-        let mut camera = self.base().try_get_node_as::<Camera3D>("Camera3D").unwrap();
+        let mut camera = self.camera.clone();
         camera.set_position(camera_pos);
+        self.base_mut().add_child(&room);
     }
 
-    #[func]
-    pub fn exit_room(&mut self) {
+    fn exit_room(&mut self) {
+        self.map.bind_mut().exit_room();
         self.player.bind_mut().exit_room();
-        self.map_grid.set_visible(true);
-        self.map.bind_mut().leave_room();
-        if let Some(mut room) = self.base().try_get_node_as::<Node3D>("Room") {
-            room.queue_free();
-        }
+        self.grid_map.set_visible(true);
     }
 }

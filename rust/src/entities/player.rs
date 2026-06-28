@@ -1,7 +1,9 @@
 use godot::classes::{CharacterBody3D, CollisionShape3D, ICharacterBody3D, Input, MeshInstance3D};
 use godot::prelude::*;
 
+use crate::entities::item::ItemData;
 use crate::map::Map;
+// use crate::utils::load_scene_as;
 use crate::utils::{Dir3, assets, load_scene_as};
 
 #[derive(GodotClass)]
@@ -11,6 +13,9 @@ pub struct Player {
     mesh: Gd<MeshInstance3D>,
     shape: Gd<CollisionShape3D>,
     map: Gd<Map>,
+
+    inventory: Vec<ItemData>,
+    inventory_capacity: i32,
 
     pub is_moving: bool,
     pub is_in_the_room: bool,
@@ -80,6 +85,9 @@ impl Player {
             shape: load_scene_as::<CollisionShape3D>(assets::PLAYER_SHAPE),
             map,
 
+            inventory: vec![],
+            inventory_capacity: 20,
+
             is_moving: false,
             is_in_the_room: false,
 
@@ -95,9 +103,6 @@ impl Player {
             grid_position: Vector3::ZERO,
         })
     }
-
-    #[signal]
-    fn enter_room(coords: Vector2i);
 
     fn check_input(&mut self) {
         let input = Input::singleton();
@@ -137,24 +142,16 @@ impl Player {
             } else if input.is_action_just_pressed("ui_left").into() {
                 self.try_to_move(Dir3::LEFT);
             }
-
-            if input.is_action_just_pressed("interact").into() && !self.is_moving {
-                self.enter_room();
-            }
         }
     }
 
-    fn enter_room(&mut self) {
-        let coords = self.get_grid_position(Vector3::ZERO);
-        self.base_mut()
-            .emit_signal("enter_room", &[coords.to_variant()]);
+    pub fn enter_room(&mut self) {
         self.is_in_the_room = true;
         self.grid_position = self.base().get_position();
         let position = self.base().get_position() + self.move_direction * -4.0;
         self.base_mut().set_position(position);
     }
 
-    #[func]
     pub fn exit_room(&mut self) {
         self.is_in_the_room = false;
         let grid_position = self.grid_position;
@@ -180,12 +177,33 @@ impl Player {
     }
 
     // Scaling position to the map's grid postitioning
-    fn get_grid_position(&self, position: Vector3) -> Vector2i {
+    pub fn get_grid_position(&self, position: Vector3) -> Vector2i {
         if position == Vector3::ZERO {
             let position = self.base().get_position();
             return Vector2i::new((position.x - 0.5) as i32, (position.z - 0.5) as i32);
         } else {
             Vector2i::new((position.x - 0.5) as i32, (position.z - 0.5) as i32)
+        }
+    }
+
+    fn enough_inventory_space_for(&self, item: &ItemData) -> bool {
+        let mut used_space = 0;
+        for item in self.inventory.iter() {
+            used_space += item.slot_cost;
+        }
+        if used_space + item.slot_cost <= self.inventory_capacity {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    pub fn try_to_take(&mut self, item: ItemData) -> bool {
+        if self.enough_inventory_space_for(&item) {
+            self.inventory.push(item);
+            return true;
+        } else {
+            return false;
         }
     }
 }
