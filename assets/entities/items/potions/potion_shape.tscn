@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://b7tru6pgq4ov3"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s8ivg"]
+size = Vector3(0.19027099, 0.4, 0.25)
+
+[node name="PotionShape" type="CollisionShape3D" unique_id=1561924119]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.007281497, 0.16918945, 0)
+shape = SubResource("BoxShape3D_s8ivg")

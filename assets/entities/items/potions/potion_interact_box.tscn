@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bbfxhbre6nsnu"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cejpx"]
+
+[node name="PotionInteractBox" type="Area3D" unique_id=1824890551]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1444737969]
+shape = SubResource("BoxShape3D_cejpx")

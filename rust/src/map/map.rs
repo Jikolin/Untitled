@@ -2,8 +2,8 @@ use godot::classes::GridMap;
 use godot::prelude::*;
 
 use crate::map::{DoorNode, Floor, RoomData};
-use crate::player::Player;
 use crate::utils::load_scene_as;
+use crate::{Item, Player};
 
 #[derive(GodotClass)]
 #[class(base = Node, no_init)]
@@ -51,33 +51,61 @@ impl Map {
     }
 
     pub fn build_room(&mut self, coords: Vector2i, player: Gd<Player>) -> Gd<Node3D> {
-        let mut room = load_scene_as::<Node3D>("res://scenes/room.tscn");
+        let mut room_node = load_scene_as::<Node3D>("res://scenes/room.tscn");
+        self.mut_current_floor().prepare_enter_room(coords, player);
+        let cell_data = self.current_floor().get_cell_data(coords).unwrap();
+
         let mut room_data = RoomData {
             coords,
             is_cleared: false,
-            enemies: Vec::new(),
+            node: room_node.clone(),
+            enemies: vec![],
+            doors: vec![],
+            items: vec![],
         };
-        self.mut_current_floor().prepare_enter_room(coords, player);
-        let data = self.current_floor().get_cell_data(coords).unwrap().clone();
-        if !data.enemies.is_empty() {
-            for enemy_data in &data.enemies {
-                let enemy = enemy_data.turn_to_life();
-                room.add_child(&enemy);
-                room_data.enemies.push(enemy.clone());
-            }
+        for enemy_data in cell_data.enemies.iter() {
+            let enemy = enemy_data.turn_to_life();
+            room_data.enemies.push(enemy.clone());
+            room_node.add_child(&enemy);
         }
-        for door_data in &data.doors {
-            let door = DoorNode::new(door_data);
-            room.add_child(&door);
+        for door_data in cell_data.doors.iter() {
+            let door_node = DoorNode::new(door_data);
+            room_data.doors.push(door_node.clone());
+            room_node.add_child(&door_node);
+        }
+        for item_data in cell_data.items.iter() {
+            let item_node = Item::new(
+                item_data.kind.clone(),
+                Vector3::new(coords.x as f32 - 4.0, 0.0, coords.y as f32),
+            );
+            room_data.items.push(item_node.clone());
+            room_node.add_child(&item_node);
         }
 
         self.curr_room = Some(room_data);
-        room
+        room_node
+    }
+    pub fn room_is_cleared(&self) -> bool {
+        if let Some(roomdata) = &self.curr_room {
+            return roomdata.is_cleared;
+        } else {
+            return false;
+        }
+    }
+    pub fn exit_room(&mut self) {
+        let mut room_data = self.curr_room.clone().unwrap();
+        self.mut_current_floor().prepare_exit_room(&mut room_data);
+        room_data.node.queue_free();
     }
 
-    pub fn leave_room(&mut self) {
-        let mut room_data = self.curr_room.clone().unwrap();
-        self.mut_current_floor().prepare_leave_room(&mut room_data);
-        self.curr_room = None;
+    pub fn try_exit_room(&self) -> bool {
+        if let Some(curr_room) = &self.curr_room {
+            for door in curr_room.doors.iter() {
+                if door.bind().player_is_colliding() {
+                    return true;
+                }
+            }
+        }
+        false
     }
 }

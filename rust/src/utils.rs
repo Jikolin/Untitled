@@ -1,16 +1,21 @@
 use godot::prelude::*;
 
 pub mod assets {
-    pub const PLAYER_MESH: &str = "res://assets/player_mesh.tscn";
-    pub const PLAYER_SHAPE: &str = "res://assets/player_shape.tscn";
-    pub const GOBLIN_MESH: &str = "res://assets/goblin_mesh.tscn";
-    pub const GOBLIN_SHAPE: &str = "res://assets/goblin_shape.tscn";
+    pub const PLAYER_MESH: &str = "res://assets/entities/player/player_mesh.tscn";
+    pub const PLAYER_SHAPE: &str = "res://assets/entities/player/player_shape.tscn";
+    pub const GOBLIN_MESH: &str = "res://assets/entities/enemies/goblin/goblin_mesh.tscn";
+    pub const GOBLIN_SHAPE: &str = "res://assets/entities/enemies/goblin/goblin_shape.tscn";
 
-    pub const DOOR_MESH: &str = "res://assets/door_mesh.tscn";
-    pub const DOOR_SHAPE: &str = "res://assets/door_shape.tscn";
+    pub const DOOR_MESH: &str = "res://assets/map/door_mesh.tscn";
+    pub const DOOR_SHAPE: &str = "res://assets/map/door_shape.tscn";
 
-    pub const ROOM: &str = "res://scenes/room.tscn";
-    pub const LABYRINTH_MESH_LIB: &str = "res://assets/labyrinth.tres";
+    pub const ITEM_INTERACT_BOX: &str =
+        "res://assets/entities/items/potions/potion_interact_box.tscn";
+    pub const POTION_MESH: &str = "res://assets/entities/items/potions/potion_mesh.glb";
+    pub const POTION_SHAPE: &str = "res://assets/entities/items/potions/potion_shape.tscn";
+
+    pub const ROOM: &str = "res://scenes/map/room.tscn";
+    pub const LABYRINTH_MESH_LIB: &str = "res://assets/map/labyrinth.tres";
 }
 
 pub fn load_resource<T>(path: &str) -> Gd<T>
@@ -18,10 +23,6 @@ where
     T: Inherits<Resource>,
 {
     load::<T>(path)
-}
-
-pub fn load_scene(path: &str) -> Gd<PackedScene> {
-    load::<PackedScene>(path)
 }
 
 pub fn load_scene_as<T>(path: &str) -> Gd<T>
