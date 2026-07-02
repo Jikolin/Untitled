@@ -1,14 +1,17 @@
+use std::collections::HashMap;
+
 use godot::classes::{Camera3D, GridMap, Input};
 use godot::prelude::*;
 
 use crate::Player;
 use crate::map::Map;
-
+use crate::utils::{AssetMap, preload_assets};
 // Game's enter point
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 pub struct MainScene {
     base: Base<Node3D>,
+    assets: AssetMap,
     player: Gd<Player>,
     map: Gd<Map>,
     grid_map: Gd<GridMap>,
@@ -25,6 +28,7 @@ impl INode3D for MainScene {
 
         MainScene {
             base,
+            assets: HashMap::new(),
             player,
             map,
             grid_map,
@@ -33,10 +37,13 @@ impl INode3D for MainScene {
     }
 
     fn ready(&mut self) {
-        let player = self.player.clone();
+        preload_assets(&mut self.assets);
+        let mut player = self.player.clone();
+        player.bind_mut().prepare(&self.assets);
+        self.base_mut().add_child(&player);
+
         let grid_map = self.grid_map.clone();
         let camera = self.camera.clone();
-        self.base_mut().add_child(&player);
         self.base_mut().add_child(&grid_map);
         self.base_mut().add_child(&camera);
     }
@@ -81,7 +88,10 @@ impl MainScene {
 
     fn enter_room(&mut self) {
         let coords = self.player.bind().get_grid_position(Vector3::ZERO);
-        let mut room = self.map.bind_mut().build_room(coords, self.player.clone());
+        let mut room = self
+            .map
+            .bind_mut()
+            .build_room(&self.assets, coords, self.player.clone());
         self.grid_map.set_visible(false);
 
         let player_pos = self.player.get_position();

@@ -1,9 +1,9 @@
 use godot::classes::GridMap;
 use godot::prelude::*;
 
+use crate::Player;
 use crate::map::{DoorNode, Floor, RoomData};
-use crate::utils::load_scene_as;
-use crate::{Item, Player};
+use crate::utils::{AssetMap, get};
 
 #[derive(GodotClass)]
 #[class(base = Node, no_init)]
@@ -50,10 +50,15 @@ impl Map {
         Vector3::new(coords.x as f32 + 0.5, 1.2, coords.y as f32 + 0.5)
     }
 
-    pub fn build_room(&mut self, coords: Vector2i, player: Gd<Player>) -> Gd<Node3D> {
-        let mut room_node = load_scene_as::<Node3D>("res://scenes/room.tscn");
+    pub fn build_room(
+        &mut self,
+        assets: &AssetMap,
+        coords: Vector2i,
+        player: Gd<Player>,
+    ) -> Gd<Node3D> {
+        let mut room_node = get::<Node3D>(&assets, "room");
         self.mut_current_floor().prepare_enter_room(coords, player);
-        let cell_data = self.current_floor().get_cell_data(coords).unwrap();
+        let cell = self.mut_current_floor().get_mut_cell(coords).unwrap();
 
         let mut room_data = RoomData {
             coords,
@@ -63,21 +68,18 @@ impl Map {
             doors: vec![],
             items: vec![],
         };
-        for enemy_data in cell_data.enemies.iter() {
-            let enemy = enemy_data.turn_to_life();
+        for enemy_data in cell.enemies.iter() {
+            let enemy = enemy_data.turn_to_life(&assets);
             room_data.enemies.push(enemy.clone());
             room_node.add_child(&enemy);
         }
-        for door_data in cell_data.doors.iter() {
-            let door_node = DoorNode::new(door_data);
+        for door_data in cell.doors.iter() {
+            let door_node = DoorNode::new(&assets, door_data);
             room_data.doors.push(door_node.clone());
             room_node.add_child(&door_node);
         }
-        for item_data in cell_data.items.iter() {
-            let item_node = Item::new(
-                item_data.kind.clone(),
-                Vector3::new(coords.x as f32 - 4.0, 0.0, coords.y as f32),
-            );
+        for item_data in cell.items.iter() {
+            let item_node = item_data.to_node(&assets, Vector3::new(3.0, 0.0, 2.0));
             room_data.items.push(item_node.clone());
             room_node.add_child(&item_node);
         }
