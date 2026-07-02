@@ -1,5 +1,5 @@
 pub mod floor;
-pub use floor::{CellType, Floor, RoomData};
+pub use floor::{Floor, RoomData};
 
 pub mod map;
 pub use map::Map;

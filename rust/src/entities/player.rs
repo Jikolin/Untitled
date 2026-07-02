@@ -3,15 +3,14 @@ use godot::prelude::*;
 
 use crate::entities::item::ItemData;
 use crate::map::Map;
-// use crate::utils::load_scene_as;
-use crate::utils::{Dir3, assets, load_scene_as};
+use crate::utils::{AssetMap, Dir3, get};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody3D, no_init)]
 pub struct Player {
     base: Base<CharacterBody3D>,
-    mesh: Gd<MeshInstance3D>,
-    shape: Gd<CollisionShape3D>,
+    //mesh: Gd<MeshInstance3D>,
+    //shape: Gd<CollisionShape3D>,
     map: Gd<Map>,
 
     inventory: Vec<ItemData>,
@@ -34,18 +33,6 @@ pub struct Player {
 
 #[godot_api]
 impl ICharacterBody3D for Player {
-    fn ready(&mut self) {
-        let mesh = self.mesh.clone();
-        let shape = self.shape.clone();
-
-        let start_position = self.map.bind().get_start_position();
-        self.base_mut().set_position(start_position);
-        self.target_pos = self.base().get_position();
-
-        self.base_mut().add_child(&mesh);
-        self.base_mut().add_child(&shape);
-    }
-
     fn physics_process(&mut self, delta: f32) {
         self.check_input();
 
@@ -81,8 +68,8 @@ impl Player {
     pub fn new(map: Gd<Map>) -> Gd<Self> {
         Gd::from_init_fn(|base| Self {
             base,
-            mesh: load_scene_as::<MeshInstance3D>(assets::PLAYER_MESH),
-            shape: load_scene_as::<CollisionShape3D>(assets::PLAYER_SHAPE),
+            //mesh: get::<MeshInstance3D>(&assets, "player/mesh"),
+            //shape: get::<CollisionShape3D>(&assets, "player/shape"),
             map,
 
             inventory: vec![],
@@ -102,6 +89,19 @@ impl Player {
             buff_move_direction: Vector3::ZERO,
             grid_position: Vector3::ZERO,
         })
+    }
+
+    // just loads assets, has to be called in the MainScene::ready ONCE
+    pub fn prepare(&mut self, assets: &AssetMap) {
+        let mesh = get::<MeshInstance3D>(&assets, "player/mesh");
+        let shape = get::<CollisionShape3D>(&assets, "player/shape");
+
+        let start_position = self.map.bind().get_start_position();
+        self.base_mut().set_position(start_position);
+        self.target_pos = self.base().get_position();
+
+        self.base_mut().add_child(&mesh);
+        self.base_mut().add_child(&shape);
     }
 
     fn check_input(&mut self) {

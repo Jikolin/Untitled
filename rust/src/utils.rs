@@ -1,44 +1,61 @@
 use godot::prelude::*;
 
-pub mod assets {
-    pub const PLAYER_MESH: &str = "res://assets/entities/player/player_mesh.tscn";
-    pub const PLAYER_SHAPE: &str = "res://assets/entities/player/player_shape.tscn";
-    pub const GOBLIN_MESH: &str = "res://assets/entities/enemies/goblin/goblin_mesh.tscn";
-    pub const GOBLIN_SHAPE: &str = "res://assets/entities/enemies/goblin/goblin_shape.tscn";
+use std::collections::HashMap;
 
-    pub const DOOR_MESH: &str = "res://assets/map/door_mesh.tscn";
-    pub const DOOR_SHAPE: &str = "res://assets/map/door_shape.tscn";
+pub type AssetMap = HashMap<&'static str, Gd<PackedScene>>;
 
-    pub const ITEM_INTERACT_BOX: &str =
-        "res://assets/entities/items/potions/potion_interact_box.tscn";
-    pub const POTION_MESH: &str = "res://assets/entities/items/potions/potion_mesh.glb";
-    pub const POTION_SHAPE: &str = "res://assets/entities/items/potions/potion_shape.tscn";
-
-    pub const ROOM: &str = "res://scenes/map/room.tscn";
-    pub const LABYRINTH_MESH_LIB: &str = "res://assets/map/labyrinth.tres";
+pub fn get<T: Inherits<Node>>(assets: &AssetMap, key: &str) -> Gd<T> {
+    assets[key].clone().instantiate_as::<T>()
 }
 
-pub fn load_resource<T>(path: &str) -> Gd<T>
-where
-    T: Inherits<Resource>,
-{
+pub fn preload_assets(map: &mut HashMap<&'static str, Gd<PackedScene>>) {
+    map.insert("player/mesh", load_asset("player/mesh"));
+    map.insert("player/shape", load_asset("player/shape"));
+
+    map.insert("goblin/mesh", load_asset("goblin/mesh"));
+    map.insert("goblin/shape", load_asset("goblin/shape"));
+
+    map.insert("interact_box", load_asset("interact_box"));
+    map.insert("potion/health", load_asset("potion/health"));
+    map.insert("weapon/spear", load_asset("weapon/spear"));
+
+    map.insert("door/mesh", load_asset("door/mesh"));
+    map.insert("door/shape", load_asset("door/shape"));
+    map.insert("room", load_asset("room"));
+}
+
+pub fn load_resource<T: Inherits<Resource>>(path: &str) -> Gd<T> {
     load::<T>(path)
 }
 
-pub fn load_scene_as<T>(path: &str) -> Gd<T>
-where
-    T: Inherits<Node>,
-{
-    load::<PackedScene>(path).instantiate_as::<T>()
+// Examples: player/mesh, goblin/shape, labyrinth/tres
+// Exceptions: potion/parameter: potion/health, potion/mana
+fn load_asset(key: &str) -> Gd<PackedScene> {
+    let keys: Vec<&str> = key.split('/').collect();
+    let path = match keys[0] {
+        "player" => format!("entities/player/{}", keys[1]),
+        "goblin" | "skeleton" => format!("entities/enemies/{}/{}", keys[0], keys[1]),
+        "potion" => format!("entities/items/potions/{}", keys[1]),
+        "weapon" => format!("entities/items/weapons/{}", keys[1]),
+        "door" => format!("map/{}_{}", keys[0], keys[1]),
+
+        // EXCEPTIONS
+        "interact_box" => format!("entities/items/interact_box"),
+        "room" | "labyrinth" => format!("map/{}", keys[0]),
+
+        _ => panic!("unknown asset: {}", keys[0]),
+    };
+
+    load::<PackedScene>(&format!("res://assets/{path}.tscn"))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Dir2i;
 impl Dir2i {
-    pub const UP: Vector2i = Vector2i { x: 0, y: -1 };
-    pub const RIGHT: Vector2i = Vector2i { x: 1, y: 0 };
-    pub const DOWN: Vector2i = Vector2i { x: 0, y: 1 };
-    pub const LEFT: Vector2i = Vector2i { x: -1, y: 0 };
+    pub const UP: Vector2i = Vector2i::new(0, -1);
+    pub const RIGHT: Vector2i = Vector2i::new(1, 0);
+    pub const DOWN: Vector2i = Vector2i::new(0, 1);
+    pub const LEFT: Vector2i = Vector2i::new(-1, 0);
 
     pub fn all() -> [Vector2i; 4] {
         [Self::UP, Self::RIGHT, Self::DOWN, Self::LEFT]
@@ -48,26 +65,10 @@ impl Dir2i {
 #[derive(Clone, Copy)]
 pub struct Dir3;
 impl Dir3 {
-    pub const UP: Vector3 = Vector3 {
-        x: 0.0,
-        y: 0.0,
-        z: -1.0,
-    };
-    pub const RIGHT: Vector3 = Vector3 {
-        x: 1.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    pub const DOWN: Vector3 = Vector3 {
-        x: 0.0,
-        y: 0.0,
-        z: 1.0,
-    };
-    pub const LEFT: Vector3 = Vector3 {
-        x: -1.0,
-        y: 0.0,
-        z: 0.0,
-    };
+    pub const UP: Vector3 = Vector3::new(0.0, 0.0, -1.0);
+    pub const RIGHT: Vector3 = Vector3::new(1.0, 0.0, 0.0);
+    pub const DOWN: Vector3 = Vector3::new(0.0, 0.0, 1.0);
+    pub const LEFT: Vector3 = Vector3::new(-1.0, 0.0, 0.0);
 
     pub fn all() -> [Vector3; 4] {
         [Self::UP, Self::RIGHT, Self::DOWN, Self::LEFT]

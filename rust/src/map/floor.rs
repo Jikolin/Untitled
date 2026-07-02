@@ -2,7 +2,7 @@ use godot::classes::{GridMap, MeshLibrary};
 use godot::prelude::*;
 use rand::RngExt;
 
-use crate::utils::{Dir2i, Dir3, assets, load_resource};
+use crate::utils::{Dir2i, Dir3, load_resource};
 
 use crate::Player;
 use crate::enemy::{Enemy, EnemyClass, EnemyData};
@@ -21,17 +21,24 @@ pub enum CellType {
 }
 
 #[derive(Default, Clone)]
-pub struct CellData {
-    pub doors: Vec<DoorData>,
-    pub enemies: Vec<EnemyData>,
-    pub items: Vec<ItemData>,
-    pub is_visited: bool,
-}
-
-#[derive(Default, Clone)]
 pub struct Cell {
     pub c_type: CellType,
-    pub data: CellData,
+    pub is_visited: bool,
+    pub items: Vec<ItemData>,
+    pub enemies: Vec<EnemyData>,
+    pub doors: Vec<DoorData>,
+}
+
+impl Cell {
+    fn new(c_type: CellType, is_visited: bool) -> Cell {
+        Cell {
+            c_type,
+            is_visited,
+            items: vec![],
+            enemies: vec![],
+            doors: vec![],
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -82,7 +89,7 @@ impl Floor {
     pub fn build_grid_map(&mut self) -> Gd<GridMap> {
         let mut grid_map = GridMap::new_alloc();
         grid_map.set_cell_size(Vector3::new(1.0, 0.4, 1.0));
-        let mesh_lib = load_resource::<MeshLibrary>(assets::LABYRINTH_MESH_LIB);
+        let mesh_lib = load_resource::<MeshLibrary>("res://assets/map/labyrinth.tres");
         grid_map.set_mesh_library(&mesh_lib);
 
         for y in 0..self.height {
@@ -111,47 +118,44 @@ impl Floor {
     }
 
     pub fn prepare_enter_room(&mut self, coords: Vector2i, player: Gd<Player>) {
-        if let Some(cell_data) = self.get_cell_data(coords)
-            && cell_data.is_visited
-        {
-            return;
-        } else {
-            let mut cell_data = CellData {
-                doors: vec![],
-                enemies: vec![],
-                items: vec![],
-                is_visited: true,
-            };
-            for dir3 in Dir3::all() {
+        let doors: Vec<DoorData> = Dir3::all()
+            .iter()
+            .filter_map(|&dir3| {
                 let dir2i = Vector2i::new(dir3.x as i32, dir3.z as i32);
-                if let Some(CellType::Bridge { .. }) = self.get_cell_type(coords + dir2i) {
-                    cell_data.doors.push(DoorData {
-                        // While room is fixed-size and same it works
+                match self.get_cell_type(coords + dir2i) {
+                    Some(CellType::Bridge { .. }) => Some(DoorData {
                         position: Vector3::new(dir3.x * 4.9, 0.3, dir3.z * 4.9),
                         rotation: match dir3 {
                             Dir3::UP | Dir3::DOWN => Basis::looking_at(Vector3::new(1.0, 0.0, 0.0)),
                             _ => Basis::default(),
                         },
-                    });
+                    }),
+                    _ => None,
                 }
-            }
+            })
+            .collect();
 
-            let mut enemy = Enemy::new(player, EnemyClass::Goblin);
-            cell_data.enemies.push(enemy.bind_mut().to_data());
-
-            let item = ItemData {
-                slot_cost: 1,
-                kind: ItemKind::Potion,
-            };
-            cell_data.items.push(item);
-
-            let cell = self.get_mut_cell(coords).unwrap();
-            cell.data = cell_data;
+        let Some(cell) = self.get_mut_cell(coords) else {
+            return;
+        };
+        if cell.is_visited {
+            return;
         }
+        cell.is_visited = true;
+        cell.doors = doors;
+
+        let enemy = EnemyData::new(EnemyClass::Goblin, Vector3::new(5.0, 0.0, 3.0), player);
+        cell.enemies.push(enemy);
+
+        let item = ItemData {
+            slot_cost: 1,
+            kind: ItemKind::Potion,
+        };
+        cell.items.push(item);
     }
 
     pub fn prepare_exit_room(&mut self, room_data: &mut RoomData) {
-        let cell_data = self.get_cell_mut_data(room_data.coords).unwrap();
+        let cell_data = self.get_mut_cell(room_data.coords).unwrap();
         cell_data.enemies.clear();
         for enemy in room_data.enemies.iter_mut() {
             cell_data.enemies.push(enemy.bind_mut().to_data());
@@ -195,25 +199,9 @@ impl Floor {
         }
     }
 
-    fn get_mut_cell(&mut self, coords: Vector2i) -> Option<&mut Cell> {
+    pub fn get_mut_cell(&mut self, coords: Vector2i) -> Option<&mut Cell> {
         if self.coords_is_ok(coords) {
             Some(&mut self.grid[coords.y as usize][coords.x as usize])
-        } else {
-            None
-        }
-    }
-
-    pub fn get_cell_data(&self, coords: Vector2i) -> Option<&CellData> {
-        if self.coords_is_ok(coords) {
-            Some(&self.grid[coords.y as usize][coords.x as usize].data)
-        } else {
-            None
-        }
-    }
-
-    fn get_cell_mut_data(&mut self, coords: Vector2i) -> Option<&mut CellData> {
-        if self.coords_is_ok(coords) {
-            Some(&mut self.grid[coords.y as usize][coords.x as usize].data)
         } else {
             None
         }
