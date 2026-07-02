@@ -1,8 +1,0 @@
-[gd_scene format=3 uid="uid://dvwcfyx41k1ta"]
-
-[ext_resource type="PackedScene" uid="uid://cmy7mdogdug30" path="res://assets/entities/items/potion/potion_mesh.glb" id="1_1ssuc"]
-
-[node name="Node3D" type="Node3D" unique_id=1320114570]
-
-[node name="potion_mesh" parent="." unique_id=936536952 instance=ExtResource("1_1ssuc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08329654, 0)
