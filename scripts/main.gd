@@ -1,4 +1,4 @@
-extends Node3D
+extends Node3D;
 class_name MainScene
 
 var assets = Assets.new()
@@ -6,7 +6,7 @@ var map: Node
 var player: Node
 
 func _ready():
-	add_child(assets)  # now ready() runs, preloading happens
+	add_child(assets)  
 	map = Map.create(10, 10, 2)
 	player = Player.create(assets, map)
 	add_child(player)

@@ -2,9 +2,10 @@ use godot::classes::{CharacterBody3D, CollisionShape3D, ICharacterBody3D, MeshIn
 use godot::prelude::*;
 
 use crate::Player;
-use crate::utils::{AssetMap, get};
+use crate::utils::Assets;
 
-#[derive(Clone, Copy)]
+#[derive(GodotConvert, Clone, Copy, Debug)]
+#[godot(via = GString)]
 pub enum EnemyClass {
     Goblin,
 }
@@ -27,10 +28,10 @@ impl EnemyData {
         }
     }
 
-    pub fn turn_to_life(&self, assets: &AssetMap) -> Gd<Enemy> {
+    pub fn turn_to_life(&self, assets: Gd<Assets>) -> Gd<Enemy> {
         match self.e_class {
             EnemyClass::Goblin => {
-                let mut enemie = Enemy::new(assets, self.player.clone(), EnemyClass::Goblin);
+                let mut enemie = Enemy::create(assets, self.player.clone(), EnemyClass::Goblin);
                 enemie.set_position(self.position);
                 enemie.bind_mut().is_alive = self.is_alive;
                 enemie
@@ -43,8 +44,8 @@ impl EnemyData {
 #[class(base = CharacterBody3D, no_init)]
 pub struct Enemy {
     base: Base<CharacterBody3D>,
-    mesh: Gd<MeshInstance3D>,
-    shape: Gd<CollisionShape3D>,
+    mesh: Gd<PackedScene>,
+    shape: Gd<PackedScene>,
     pub e_class: EnemyClass,
     // pub name: String,
     player: Gd<Player>,
@@ -56,8 +57,8 @@ pub struct Enemy {
 #[godot_api]
 impl ICharacterBody3D for Enemy {
     fn ready(&mut self) {
-        let mesh = self.mesh.clone();
-        let shape = self.shape.clone();
+        let mesh = self.mesh.clone().instantiate_as::<MeshInstance3D>();
+        let shape = self.shape.clone().instantiate_as::<CollisionShape3D>();
 
         self.base_mut().add_child(&mesh);
         self.base_mut().add_child(&shape);
@@ -75,12 +76,14 @@ impl ICharacterBody3D for Enemy {
     }
 }
 
+#[godot_api]
 impl Enemy {
-    pub fn new(assets: &AssetMap, player: Gd<Player>, e_class: EnemyClass) -> Gd<Enemy> {
+    #[func]
+    pub fn create(assets: Gd<Assets>, player: Gd<Player>, e_class: EnemyClass) -> Gd<Enemy> {
         Gd::from_init_fn(|base| Self {
             base,
-            mesh: get(&assets, "goblin/mesh"),
-            shape: get(&assets, "goblin/shape"),
+            mesh: assets.bind().get_scene(GString::from("goblin/mesh")),
+            shape: assets.bind().get_scene(GString::from("goblin/shape")),
             e_class: e_class,
             player,
 
@@ -88,8 +91,6 @@ impl Enemy {
             speed: 3.0,
         })
     }
-
-    // pub fn new_ex
 
     pub fn to_data(&self) -> EnemyData {
         EnemyData {

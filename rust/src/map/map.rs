@@ -3,7 +3,7 @@ use godot::prelude::*;
 
 use crate::Player;
 use crate::map::{DoorNode, Floor, RoomData};
-use crate::utils::{AssetMap, get};
+use crate::utils::Assets;
 
 #[derive(GodotClass)]
 #[class(base = Node, no_init)]
@@ -54,11 +54,12 @@ impl Map {
 
     pub fn build_room(
         &mut self,
-        assets: &AssetMap,
+        assets: Gd<Assets>,
         coords: Vector2i,
         player: Gd<Player>,
     ) -> Gd<Node3D> {
-        let mut room_node = get::<Node3D>(&assets, "room");
+        let room_node = assets.bind().get_scene(GString::from("room"));
+        let mut room_node = room_node.instantiate_as::<Node3D>();
         self.mut_current_floor().prepare_enter_room(coords, player);
         let cell = self.mut_current_floor().get_mut_cell(coords).unwrap();
 
@@ -71,17 +72,17 @@ impl Map {
             items: vec![],
         };
         for enemy_data in cell.enemies.iter() {
-            let enemy = enemy_data.turn_to_life(&assets);
+            let enemy = enemy_data.turn_to_life(assets.clone());
             room_data.enemies.push(enemy.clone());
             room_node.add_child(&enemy);
         }
         for door_data in cell.doors.iter() {
-            let door_node = DoorNode::new(&assets, door_data);
+            let door_node = DoorNode::new(assets.clone(), door_data);
             room_data.doors.push(door_node.clone());
             room_node.add_child(&door_node);
         }
         for item_data in cell.items.iter() {
-            let item_node = item_data.to_node(&assets, Vector3::new(3.0, 0.0, 2.0));
+            let item_node = item_data.to_node(assets.clone(), Vector3::new(3.0, 0.0, 2.0));
             room_data.items.push(item_node.clone());
             room_node.add_child(&item_node);
         }

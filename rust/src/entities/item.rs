@@ -1,7 +1,7 @@
 use godot::classes::{Area3D, MeshInstance3D};
 use godot::prelude::*;
 
-use crate::utils::{AssetMap, get};
+use crate::utils::Assets;
 
 #[derive(Clone)]
 pub struct ItemData {
@@ -10,12 +10,13 @@ pub struct ItemData {
 }
 
 impl ItemData {
-    pub fn to_node(&self, assets: &AssetMap, position: Vector3) -> Gd<Item> {
+    pub fn to_node(&self, assets: Gd<Assets>, position: Vector3) -> Gd<Item> {
         Item::new(assets, self.kind.clone(), self.slot_cost, position)
     }
 }
 
-#[derive(Clone)]
+#[derive(GodotConvert, Clone, Copy, Debug)]
+#[godot(via = GString)]
 pub enum ItemKind {
     Potion,
     Weapon,
@@ -61,14 +62,20 @@ impl INode3D for Item {
 
 impl Item {
     pub fn new(
-        assets: &AssetMap,
+        assets: Gd<Assets>,
         kind: ItemKind,
         slot_cost: i32,
         mut position: Vector3,
     ) -> Gd<Self> {
         // let mesh = load_scene_as::<Node3D>(assets::POTION_MESH);
-        let mesh = get::<MeshInstance3D>(&assets, "weapon/spear");
-        let interact_box = get::<Area3D>(&assets, "interact_box");
+        let mesh = assets
+            .bind()
+            .get_scene(GString::from("potion/health"))
+            .instantiate_as::<MeshInstance3D>();
+        let interact_box = assets
+            .bind()
+            .get_scene(GString::from("interact_box"))
+            .instantiate_as::<Area3D>();
         let slot_cost = slot_cost.max(1);
         let cost_factor = slot_cost as f32;
         let bob_speed = 2.0 / cost_factor;

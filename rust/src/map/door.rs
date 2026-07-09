@@ -2,7 +2,7 @@ use godot::classes::{Area3D, CollisionShape3D, IArea3D, MeshInstance3D};
 use godot::prelude::*;
 
 use crate::Player;
-use crate::utils::{AssetMap, get};
+use crate::utils::Assets;
 
 #[derive(Debug, Clone)]
 pub struct DoorData {
@@ -21,10 +21,16 @@ impl IArea3D for DoorNode {}
 
 // #[godot_api]
 impl DoorNode {
-    pub fn new(assets: &AssetMap, data: &DoorData) -> Gd<Self> {
+    pub fn new(assets: Gd<Assets>, data: &DoorData) -> Gd<Self> {
         let mut door = Gd::from_init_fn(|base| Self { base });
-        let mesh = get::<MeshInstance3D>(&assets, "door/mesh");
-        let shape = get::<CollisionShape3D>(&assets, "door/shape");
+        let mesh = assets
+            .bind()
+            .get_scene(GString::from("door/mesh"))
+            .instantiate_as::<MeshInstance3D>();
+        let shape = assets
+            .bind()
+            .get_scene(GString::from("door/shape"))
+            .instantiate_as::<CollisionShape3D>();
         door.add_child(&mesh);
         door.add_child(&shape);
         door.set_position(data.position);

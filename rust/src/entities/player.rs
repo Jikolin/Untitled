@@ -146,6 +146,11 @@ impl Player {
         }
     }
 
+    #[func]
+    pub fn is_in_the_room(&self) -> bool {
+        self.is_in_the_room
+    }
+
     pub fn enter_room(&mut self) {
         self.is_in_the_room = true;
         self.grid_position = self.base().get_position();
