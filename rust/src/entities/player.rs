@@ -3,14 +3,15 @@ use godot::prelude::*;
 
 use crate::entities::item::ItemData;
 use crate::map::Map;
-use crate::utils::{AssetMap, Dir3, get};
+use crate::utils::Assets;
+use crate::utils::Dir3;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody3D, no_init)]
 pub struct Player {
     base: Base<CharacterBody3D>,
-    //mesh: Gd<MeshInstance3D>,
-    //shape: Gd<CollisionShape3D>,
+    mesh: Gd<PackedScene>,
+    shape: Gd<PackedScene>,
     map: Gd<Map>,
 
     inventory: Vec<ItemData>,
@@ -33,6 +34,18 @@ pub struct Player {
 
 #[godot_api]
 impl ICharacterBody3D for Player {
+    fn ready(&mut self) {
+        let mesh = self.mesh.clone().instantiate_as::<MeshInstance3D>();
+        let shape = self.shape.clone().instantiate_as::<CollisionShape3D>();
+
+        let start_position = self.map.bind().get_start_position();
+        self.base_mut().set_position(start_position);
+        self.target_pos = self.base().get_position();
+
+        self.base_mut().add_child(&mesh);
+        self.base_mut().add_child(&shape);
+    }
+
     fn physics_process(&mut self, delta: f32) {
         self.check_input();
 
@@ -65,11 +78,12 @@ impl ICharacterBody3D for Player {
 
 #[godot_api]
 impl Player {
-    pub fn new(map: Gd<Map>) -> Gd<Self> {
+    #[func]
+    pub fn create(assets: Gd<Assets>, map: Gd<Map>) -> Gd<Self> {
         Gd::from_init_fn(|base| Self {
             base,
-            //mesh: get::<MeshInstance3D>(&assets, "player/mesh"),
-            //shape: get::<CollisionShape3D>(&assets, "player/shape"),
+            mesh: assets.bind().get_scene(GString::from("player/mesh")),
+            shape: assets.bind().get_scene(GString::from("player/shape")),
             map,
 
             inventory: vec![],
@@ -89,19 +103,6 @@ impl Player {
             buff_move_direction: Vector3::ZERO,
             grid_position: Vector3::ZERO,
         })
-    }
-
-    // just loads assets, has to be called in the MainScene::ready ONCE
-    pub fn prepare(&mut self, assets: &AssetMap) {
-        let mesh = get::<MeshInstance3D>(&assets, "player/mesh");
-        let shape = get::<CollisionShape3D>(&assets, "player/shape");
-
-        let start_position = self.map.bind().get_start_position();
-        self.base_mut().set_position(start_position);
-        self.target_pos = self.base().get_position();
-
-        self.base_mut().add_child(&mesh);
-        self.base_mut().add_child(&shape);
     }
 
     fn check_input(&mut self) {

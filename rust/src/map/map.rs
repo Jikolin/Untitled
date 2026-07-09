@@ -14,13 +14,15 @@ pub struct Map {
     curr_room: Option<RoomData>,
 }
 
+#[godot_api]
 impl Map {
-    pub fn new(floor_size: (usize, usize), flour_count: usize) -> Gd<Self> {
-        let mut floors = Vec::with_capacity(flour_count);
-        for _ in 0..flour_count {
+    #[func]
+    pub fn create(width: i32, height: i32, floor_count: i32) -> Gd<Self> {
+        let floor_size = (width as usize, height as usize);
+        let mut floors = Vec::with_capacity(floor_count as usize);
+        for _ in 0..floor_count {
             floors.push(Floor::new(floor_size));
         }
-
         Gd::from_init_fn(|base| Self {
             base,
             floors,

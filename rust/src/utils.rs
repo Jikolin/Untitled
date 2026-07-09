@@ -8,6 +8,30 @@ pub fn get<T: Inherits<Node>>(assets: &AssetMap, key: &str) -> Gd<T> {
     assets[key].clone().instantiate_as::<T>()
 }
 
+#[derive(GodotClass, Debug)]
+#[class(base=Node, init)]
+pub struct Assets {
+    base: Base<Node>,
+    #[init(val=HashMap::new())]
+    scenes: HashMap<&'static str, Gd<PackedScene>>,
+}
+
+#[godot_api]
+impl INode for Assets {
+    fn ready(&mut self) {
+        let scenes = &mut self.scenes;
+        preload_assets(scenes);
+    }
+}
+
+#[godot_api]
+impl Assets {
+    #[func]
+    pub fn get_scene(&self, key: GString) -> Gd<PackedScene> {
+        self.scenes[key.to_string().as_str()].clone()
+    }
+}
+
 pub fn preload_assets(map: &mut HashMap<&'static str, Gd<PackedScene>>) {
     map.insert("player/mesh", load_asset("player/mesh"));
     map.insert("player/shape", load_asset("player/shape"));
